@@ -1,4 +1,4 @@
-import Control.Applicative -- Otherwise you can't do the Applicative instance.
+import Control.Applicative
 import Control.Monad (liftM, ap)
 
 data State s a = State { runState :: (s -> (a, s)) }
@@ -10,7 +10,6 @@ instance Monad (State s) where
     m1 = k x1 
     in runState m1 st1
      
-
 instance Functor (State r) where
   fmap = liftM
 
