@@ -7,17 +7,6 @@ instance Functor Prs where
     fmap f p = Prs fun where
         fun s = (\(a, s') -> (f a, s')) <$> runPrs p s
 
-anyChr :: Prs Char
-anyChr = Prs fun where
-    fun "" = Nothing
-    fun (c:xs) = Just (c, xs)
-
-char :: Char -> Prs Char
-char c = Prs fun where
-    fun [] = Nothing
-    fun (x:xs) | c == x = Just (c, xs)
-               | otherwise = Nothing
-
 instance Applicative Prs where
     pure a = Prs $ \s -> Just (a, s)
     pf <*> pv = Prs fun where 
@@ -57,3 +46,42 @@ many1 prs = (:) <$> prs <*> many prs
 -- Just ("AAA","BCDE")
 -- > runPrs (many1 $ char 'A') "BCDE"
 -- Nothing
+
+digitCount :: Int -> Int
+digitCount x = helper 0 x where 
+    helper count 0 = count
+    helper count x = helper (count + 1) (x `div` 10)
+
+satisfy :: (Char -> Bool) -> Prs Char
+satisfy pr = Prs fun where
+    fun ""      = Nothing
+    fun (c:cx)  | pr c      = Just (c, cx) 
+                | otherwise = Nothing
+
+anyChr :: Prs Char
+anyChr = satisfy $ const True
+
+char :: Char -> Prs Char
+char c = satisfy (\x -> c == x)
+    
+digit :: Prs Char
+digit = satisfy isDigit
+
+nat :: Prs Int
+nat = read <$> many1 digit 
+
+dbl :: Prs Double
+dbl = double <|> natAsDbl where
+    double = (+) <$> natAsDbl <* char '.' <*> fractional
+    natAsDbl = (fromIntegral <$> nat)
+    fractional = (\x -> (fromIntegral x) / (10 ^ (fromIntegral $ digitCount x))) <$> nat
+
+mult :: Prs Double
+mult = (*) <$> dbl <* char '*' <*> dbl
+
+-- GHCi> runPrs mult "2.2*10"
+-- Just (22.0,"")
+-- GHCi> runPrs mult "2*10.1"
+-- Just (20.2,"")
+-- GHCi> runPrs mult "2.9*3.9aa"
+-- Just (11.309999999999999,"aa")
