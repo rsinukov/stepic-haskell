@@ -1,4 +1,5 @@
 import Data.Char
+import Control.Applicative
 
 newtype Prs a = Prs { runPrs :: String -> Maybe (a, String) }
 
@@ -10,6 +11,11 @@ anyChr :: Prs Char
 anyChr = Prs fun where
     fun "" = Nothing
     fun (c:xs) = Just (c, xs)
+
+char :: Char -> Prs Char
+char c = Prs fun where
+    fun (x:xs) | c == x = Just (c, xs)
+               | otherwise = Nothing
 
 instance Applicative Prs where
     pure a = Prs $ \s -> Just (a, s)
@@ -25,3 +31,17 @@ instance Applicative Prs where
 -- Nothing
 -- GHCi> runPrs (digitToInt <$> anyChr) "BCD"
 -- Just (11,"CD")
+
+instance Alternative Prs where
+    -- empty :: f a
+    empty = Prs $ \s -> Nothing
+    -- (<|>) :: f a -> f a -> f a
+    p <|> q = Prs fun where
+       fun s = (runPrs p s) <|> (runPrs q s)
+
+-- GHCi> runPrs (char 'A' <|> char 'B') "ABC"
+-- Just ('A',"BC")
+-- GHCi> runPrs (char 'A' <|> char 'B') "BCD"
+-- Just ('B',"CD")
+-- GHCi> runPrs (char 'A' <|> char 'B') "CDE"
+-- Nothing
