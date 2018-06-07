@@ -11,6 +11,14 @@ anyChr = Prs fun where
     fun "" = Nothing
     fun (c:xs) = Just (c, xs)
 
+instance Applicative Prs where
+    pure a = Prs $ \s -> Just (a, s)
+    pf <*> pv = Prs fun where 
+        fun s = do
+            (f, s') <- runPrs pf s
+            (v, s'') <- runPrs pv s'
+            return (f v, s'')
+
 -- GHCi> runPrs anyChr "ABC"
 -- Just ('A',"BC")
 -- GHCi> runPrs anyChr ""
