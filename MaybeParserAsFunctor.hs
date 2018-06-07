@@ -1,5 +1,5 @@
 import Data.Char
-import Control.Applicative
+import Control.Applicative hiding (many)
 
 newtype Prs a = Prs { runPrs :: String -> Maybe (a, String) }
 
@@ -14,6 +14,7 @@ anyChr = Prs fun where
 
 char :: Char -> Prs Char
 char c = Prs fun where
+    fun [] = Nothing
     fun (x:xs) | c == x = Just (c, xs)
                | otherwise = Nothing
 
@@ -44,4 +45,15 @@ instance Alternative Prs where
 -- GHCi> runPrs (char 'A' <|> char 'B') "BCD"
 -- Just ('B',"CD")
 -- GHCi> runPrs (char 'A' <|> char 'B') "CDE"
+-- Nothing
+
+many :: Prs a -> Prs [a]
+many prs = (:) <$> prs <*> many prs <|> pure []
+
+many1 :: Prs a -> Prs [a]
+many1 prs = (:) <$> prs <*> many prs
+
+-- > runPrs (many1 $ char 'A') "AAABCDE"
+-- Just ("AAA","BCDE")
+-- > runPrs (many1 $ char 'A') "BCDE"
 -- Nothing
