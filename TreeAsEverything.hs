@@ -26,7 +26,9 @@ instance Traversable Tree where
     traverse f Nil                      = pure Nil
     traverse f (Branch left a right)    = pure Branch <*> (traverse f left) <*> (f a) <*> (traverse f right)
 
--- GHCi> traverse (\x->[x+2,x-2]) (Ok 5)
--- [Ok 7,Ok 3]
--- GHCi> traverse (\x->[x+2,x-2]) (Error "!!!")
--- [Error "!!!"]
+-- GHCi> traverse (\x -> if odd x then Right x else Left x) (Branch (Branch Nil 1 Nil) 3 Nil)
+-- Right (Branch (Branch Nil 1 Nil) 3 Nil)
+-- GHCi> traverse (\x -> if odd x then Right x else Left x) (Branch (Branch Nil 1 Nil) 2 Nil)
+-- Left 2
+-- GHCi> sequenceA $ Branch (Branch Nil [1,2] Nil) [3] Nil
+-- [Branch (Branch Nil 1 Nil) 3 Nil,Branch (Branch Nil 2 Nil) 3 Nil]
