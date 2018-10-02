@@ -19,7 +19,14 @@ instance Applicative PrsE where
         fun s = do
             (f, s') <- runPrsE pf s
             (v, s'') <- runPrsE pv s'
-            return (f v, s'')
+            return (f v, s'')  
+
+instance Monad PrsE where
+--  (>>=) :: PrsE a -> (a -> PrsE b) -> PrsE b  
+    (>>=) pv f = PrsE fun where
+        fun s = do
+            (v, s') <- runPrsE pv s
+            runPrsE (f v) s'
 
 -- GHCi> let anyE = satisfyE (const True)
 -- GHCi> runPrsE ((,) <$> anyE <* charE 'B' <*> anyE) "ABCDE"
